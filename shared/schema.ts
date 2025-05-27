@@ -17,6 +17,9 @@ export const userProfiles = pgTable("user_profiles", {
   familySize: integer("family_size").notNull().default(2),
   preferences: jsonb("preferences").notNull().default({}),
   allergies: text("allergies").array().notNull().default([]),
+  subscriptionType: text("subscription_type").notNull().default("free"), // free, premium, family
+  recipesGenerated: integer("recipes_generated").notNull().default(0),
+  lastRecipeReset: timestamp("last_recipe_reset").defaultNow(),
 });
 
 export const recipes = pgTable("recipes", {
@@ -77,6 +80,26 @@ export const userAchievements = pgTable("user_achievements", {
   unlockedAt: timestamp("unlocked_at").defaultNow(),
 });
 
+export const nutritionTracking = pgTable("nutrition_tracking", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD format
+  totalCalories: integer("total_calories").notNull().default(0),
+  totalProtein: integer("total_protein").notNull().default(0),
+  totalCarbs: integer("total_carbs").notNull().default(0),
+  totalFat: integer("total_fat").notNull().default(0),
+  mealsEaten: jsonb("meals_eaten").notNull().default([]),
+});
+
+export const premiumFeatures = pgTable("premium_features", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  feature: text("feature").notNull(), // unlimited_recipes, advanced_nutrition, meal_planning, etc.
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -118,6 +141,15 @@ export const insertUserAchievementSchema = createInsertSchema(userAchievements).
   unlockedAt: true,
 });
 
+export const insertNutritionTrackingSchema = createInsertSchema(nutritionTracking).omit({
+  id: true,
+});
+
+export const insertPremiumFeatureSchema = createInsertSchema(premiumFeatures).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -142,3 +174,9 @@ export type CookingSession = typeof cookingSessions.$inferSelect;
 
 export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
 export type UserAchievement = typeof userAchievements.$inferSelect;
+
+export type InsertNutritionTracking = z.infer<typeof insertNutritionTrackingSchema>;
+export type NutritionTracking = typeof nutritionTracking.$inferSelect;
+
+export type InsertPremiumFeature = z.infer<typeof insertPremiumFeatureSchema>;
+export type PremiumFeature = typeof premiumFeatures.$inferSelect;

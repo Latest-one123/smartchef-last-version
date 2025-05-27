@@ -370,14 +370,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userIngredientNames = userIngredients.map(ing => ing.ingredient.toLowerCase());
       
       // Extract ingredients from meal plan
-      Object.values(mealPlan.meals).forEach((dayMeals: any) => {
-        ['lunch', 'dinner'].forEach(mealType => {
-          const meal = dayMeals[mealType];
-          if (meal && meal.ingredients) {
-            meal.ingredients.forEach((ingredient: string) => allIngredients.add(ingredient));
+      if (mealPlan.meals && typeof mealPlan.meals === 'object') {
+        Object.values(mealPlan.meals as Record<string, any>).forEach((dayMeals: any) => {
+          if (dayMeals && typeof dayMeals === 'object') {
+            ['lunch', 'dinner'].forEach(mealType => {
+              const meal = dayMeals[mealType];
+              if (meal && meal.ingredients && Array.isArray(meal.ingredients)) {
+                meal.ingredients.forEach((ingredient: string) => allIngredients.add(ingredient));
+              }
+            });
           }
         });
-      });
+      }
       
       // Filter out ingredients user already has
       const missingIngredients = Array.from(allIngredients).filter(ingredient =>

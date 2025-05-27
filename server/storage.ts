@@ -554,7 +554,15 @@ export class MemStorage implements IStorage {
 
     sampleRecipes.forEach(recipe => {
       const id = this.currentId++;
-      this.recipes.set(id, { ...recipe, id } as Recipe);
+      this.recipes.set(id, { 
+        ...recipe, 
+        id, 
+        createdAt: new Date(),
+        rating: recipe.rating || 40,
+        tags: recipe.tags || [],
+        tips: recipe.tips || [],
+        imageUrl: recipe.imageUrl || null
+      } as Recipe);
     });
   }
 
@@ -581,7 +589,15 @@ export class MemStorage implements IStorage {
 
   async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
     const id = this.currentId++;
-    const userProfile: UserProfile = { ...profile, id };
+    const userProfile: UserProfile = { 
+      ...profile, 
+      id,
+      dietaryRestrictions: profile.dietaryRestrictions || [],
+      cookingLevel: profile.cookingLevel || 'beginner',
+      familySize: profile.familySize || 2,
+      allergies: profile.allergies || [],
+      preferences: profile.preferences || {}
+    };
     this.userProfiles.set(profile.userId, userProfile);
     return userProfile;
   }
@@ -606,7 +622,15 @@ export class MemStorage implements IStorage {
 
   async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
     const id = this.currentId++;
-    const newRecipe: Recipe = { ...recipe, id, createdAt: new Date() };
+    const newRecipe: Recipe = { 
+      ...recipe, 
+      id, 
+      createdAt: new Date(),
+      rating: recipe.rating || 40,
+      tags: recipe.tags || [],
+      tips: recipe.tips || [],
+      imageUrl: recipe.imageUrl || null
+    };
     this.recipes.set(id, newRecipe);
     return newRecipe;
   }
@@ -642,6 +666,7 @@ export class MemStorage implements IStorage {
     const newIngredient: UserIngredient = { 
       ...ingredient, 
       id, 
+      category: ingredient.category || 'other',
       addedAt: new Date() 
     };
     
@@ -732,6 +757,8 @@ export class MemStorage implements IStorage {
     const newSession: CookingSession = { 
       ...session, 
       id, 
+      status: session.status || 'in_progress',
+      currentStep: session.currentStep || 0,
       startedAt: new Date(),
       completedAt: null
     };

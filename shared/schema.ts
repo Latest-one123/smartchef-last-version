@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -180,3 +181,87 @@ export type NutritionTracking = typeof nutritionTracking.$inferSelect;
 
 export type InsertPremiumFeature = z.infer<typeof insertPremiumFeatureSchema>;
 export type PremiumFeature = typeof premiumFeatures.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  profile: one(userProfiles, {
+    fields: [users.id],
+    references: [userProfiles.userId],
+  }),
+  ingredients: many(userIngredients),
+  favorites: many(userFavorites),
+  mealPlans: many(mealPlans),
+  cookingSessions: many(cookingSessions),
+  achievements: many(userAchievements),
+  nutritionTracking: many(nutritionTracking),
+  premiumFeatures: many(premiumFeatures),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [userProfiles.userId],
+    references: [users.id],
+  }),
+}));
+
+export const recipesRelations = relations(recipes, ({ many }) => ({
+  favorites: many(userFavorites),
+  cookingSessions: many(cookingSessions),
+}));
+
+export const userIngredientsRelations = relations(userIngredients, ({ one }) => ({
+  user: one(users, {
+    fields: [userIngredients.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userFavoritesRelations = relations(userFavorites, ({ one }) => ({
+  user: one(users, {
+    fields: [userFavorites.userId],
+    references: [users.id],
+  }),
+  recipe: one(recipes, {
+    fields: [userFavorites.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
+export const mealPlansRelations = relations(mealPlans, ({ one }) => ({
+  user: one(users, {
+    fields: [mealPlans.userId],
+    references: [users.id],
+  }),
+}));
+
+export const cookingSessionsRelations = relations(cookingSessions, ({ one }) => ({
+  user: one(users, {
+    fields: [cookingSessions.userId],
+    references: [users.id],
+  }),
+  recipe: one(recipes, {
+    fields: [cookingSessions.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+  user: one(users, {
+    fields: [userAchievements.userId],
+    references: [users.id],
+  }),
+}));
+
+export const nutritionTrackingRelations = relations(nutritionTracking, ({ one }) => ({
+  user: one(users, {
+    fields: [nutritionTracking.userId],
+    references: [users.id],
+  }),
+}));
+
+export const premiumFeaturesRelations = relations(premiumFeatures, ({ one }) => ({
+  user: one(users, {
+    fields: [premiumFeatures.userId],
+    references: [users.id],
+  }),
+}));

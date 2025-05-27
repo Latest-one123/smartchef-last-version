@@ -276,10 +276,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate recipes based on ingredients
+  // Generate recipes based on ingredients with premium limits
   app.post("/api/recipes/generate", async (req, res) => {
     try {
       const { userId, ingredients, dietaryRestrictions, cookingLevel } = req.body;
+      
+      // Check user subscription and recipe limits
+      const userProfile = await storage.getUserProfile(userId);
+      if (userProfile) {
+        const today = new Date().toISOString().split('T')[0];
+        const lastReset = userProfile.lastRecipeReset ? new Date(userProfile.lastRecipeReset).toISOString().split('T')[0] : null;
+        
+        // Reset daily count if it's a new day
+        if (lastReset !== today) {
+          await storage.updateUserProfile(userId, {
+            recipesGenerated: 0,
+            lastRecipeReset: new Date()
+          });
+          userProfile.recipesGenerated = 0;
+        }
+        
+        // Check limits based on subscription
+        const limits = {
+          free: 3,
+          premium: 50,
+          family: 100
+        };
+        
+        const dailyLimit = limits[userProfile.subscriptionType as keyof typeof limits] || 3;
+        
+        if (userProfile.recipesGenerated >= dailyLimit) {
+          return res.status(429).json({ 
+            error: "Daily recipe limit reached", 
+            limit: dailyLimit,
+            subscriptionType: userProfile.subscriptionType,
+            upgradeRequired: userProfile.subscriptionType === 'free'
+          });
+        }
+        
+        // Increment recipe count
+        await storage.updateUserProfile(userId, {
+          recipesGenerated: userProfile.recipesGenerated + 1
+        });
+      }
       
       let recipes = await storage.getRecipes();
       
@@ -314,8 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
-      // Limit to 6 recipes
-      recipes = recipes.slice(0, 6);
+      // Premium users get more recipe results
+      const recipeLimit = userProfile?.subscriptionType === 'free' ? 6 : 12;
+      recipes = recipes.slice(0, recipeLimit);
       
       res.json(recipes);
     } catch (error) {

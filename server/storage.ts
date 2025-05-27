@@ -596,7 +596,10 @@ export class MemStorage implements IStorage {
       cookingLevel: profile.cookingLevel || 'beginner',
       familySize: profile.familySize || 2,
       allergies: profile.allergies || [],
-      preferences: profile.preferences || {}
+      preferences: profile.preferences || {},
+      subscriptionType: profile.subscriptionType || 'free',
+      recipesGenerated: profile.recipesGenerated || 0,
+      lastRecipeReset: profile.lastRecipeReset || new Date()
     };
     this.userProfiles.set(profile.userId, userProfile);
     return userProfile;

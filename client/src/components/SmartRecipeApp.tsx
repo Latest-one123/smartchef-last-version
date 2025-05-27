@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChefHat, Clock, Users, Heart, Star, Plus, Minus, Search, Filter, Camera, ShoppingCart, Calendar, Trophy, Leaf, AlertCircle, CheckCircle2, X, Home, Package, User, Play, Sparkles, CalendarCheck, PlayCircle, Sunrise, Sun, Moon, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight, Timer, Bell, Carrot } from 'lucide-react';
+import { ChefHat, Clock, Users, Heart, Star, Plus, Minus, Search, Filter, Camera, ShoppingCart, Calendar, Trophy, Leaf, AlertCircle, CheckCircle2, X, Home, Package, User, Play, Sparkles, CalendarCheck, PlayCircle, Sunrise, Sun, Moon, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight, Timer, Bell, Carrot, Crown, Zap, TrendingUp, BarChart3, Activity } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -23,8 +23,16 @@ const SmartRecipeApp = () => {
   } | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showRecipeModal, setShowRecipeModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes default
+  const [dailyNutrition, setDailyNutrition] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    goal: { calories: 2000, protein: 150, carbs: 250, fat: 65 }
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -131,7 +139,7 @@ const SmartRecipeApp = () => {
 
   const generateRecipesMutation = useMutation({
     mutationFn: async () => {
-      const ingredients = userIngredients.map((ing: UserIngredient) => ing.ingredient);
+      const ingredients = (userIngredients as UserIngredient[]).map((ing: UserIngredient) => ing.ingredient);
       const response = await apiRequest('POST', '/api/recipes/generate', {
         userId: currentUserId,
         ingredients,
@@ -143,6 +151,16 @@ const SmartRecipeApp = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(['/api/recipes'], data);
       toast({ title: `Generated ${data.length} recipes based on your pantry!` });
+    },
+    onError: (error: any) => {
+      if (error.status === 429) {
+        setShowUpgradeModal(true);
+        toast({ 
+          title: "Daily limit reached!", 
+          description: "Upgrade to Premium for unlimited recipes",
+          variant: "destructive"
+        });
+      }
     },
   });
 
@@ -177,11 +195,11 @@ const SmartRecipeApp = () => {
   };
 
   const isRecipeFavorited = (recipeId: number) => {
-    return userFavorites.some((fav: UserFavorite) => fav.recipeId === recipeId);
+    return (userFavorites as UserFavorite[]).some((fav: UserFavorite) => fav.recipeId === recipeId);
   };
 
   const handleAddIngredient = (ingredient: string) => {
-    if (ingredient.trim() && !userIngredients.some((ing: UserIngredient) => 
+    if (ingredient.trim() && !(userIngredients as UserIngredient[]).some((ing: UserIngredient) => 
       ing.ingredient.toLowerCase() === ingredient.toLowerCase())) {
       const category = categorizeIngredient(ingredient);
       addIngredientMutation.mutate({ ingredient: ingredient.trim(), category });
@@ -271,7 +289,231 @@ const SmartRecipeApp = () => {
   };
 
   // Get current recipe for cooking mode
-  const currentRecipe = cookingMode ? recipes.find((r: Recipe) => r.id === cookingMode.recipeId) : null;
+  const currentRecipe = cookingMode ? (recipes as Recipe[]).find((r: Recipe) => r.id === cookingMode.recipeId) : null;
+
+  // Premium Upgrade Modal Component
+  const PremiumUpgradeModal = () => (
+    showUpgradeModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal-backdrop">
+        <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 animate-slide-up">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Crown className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Upgrade to Premium</h2>
+            <p className="text-gray-600 mb-6">Unlock unlimited recipes, advanced meal planning, and nutrition tracking</p>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center text-left">
+                <Zap className="w-5 h-5 text-orange-500 mr-3" />
+                <span className="text-gray-700">Unlimited daily recipe generation</span>
+              </div>
+              <div className="flex items-center text-left">
+                <Calendar className="w-5 h-5 text-orange-500 mr-3" />
+                <span className="text-gray-700">Advanced meal planning & shopping lists</span>
+              </div>
+              <div className="flex items-center text-left">
+                <BarChart3 className="w-5 h-5 text-orange-500 mr-3" />
+                <span className="text-gray-700">Detailed nutrition tracking & analytics</span>
+              </div>
+              <div className="flex items-center text-left">
+                <Trophy className="w-5 h-5 text-orange-500 mr-3" />
+                <span className="text-gray-700">Priority customer support</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-red-600 transition-all">
+                Upgrade to Premium - $9.99/month
+              </button>
+              <button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-600 transition-all">
+                Family Plan - $14.99/month
+              </button>
+              <button 
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full text-gray-500 py-2 hover:text-gray-700 transition-colors"
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  );
+
+  // Nutrition Dashboard Component
+  const NutritionDashboard = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900">Nutrition Dashboard</h2>
+        <div className="flex items-center space-x-2">
+          <Activity className="w-5 h-5 text-green-500" />
+          <span className="text-sm font-medium text-gray-600">
+            {userProfile.subscriptionType === 'free' ? 'Upgrade for detailed tracking' : 'Premium Active'}
+          </span>
+        </div>
+      </div>
+
+      {userProfile.subscriptionType === 'free' ? (
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6 text-center">
+          <Crown className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Premium Nutrition Tracking</h3>
+          <p className="text-gray-600 mb-4">Get detailed nutrition analytics, meal tracking, and personalized recommendations</p>
+          <button 
+            onClick={() => setShowUpgradeModal(true)}
+            className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all"
+          >
+            Upgrade Now
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Flame className="w-6 h-6 text-red-500 mr-2" />
+                <span className="font-semibold text-gray-700">Calories</span>
+              </div>
+              <span className="text-sm text-gray-500">{Math.round((dailyNutrition.calories / dailyNutrition.goal.calories) * 100)}%</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-2xl font-bold text-gray-900">{dailyNutrition.calories}</span>
+                <span className="text-sm text-gray-500">/ {dailyNutrition.goal.calories}</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((dailyNutrition.calories / dailyNutrition.goal.calories) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Beef className="w-6 h-6 text-blue-500 mr-2" />
+                <span className="font-semibold text-gray-700">Protein</span>
+              </div>
+              <span className="text-sm text-gray-500">{Math.round((dailyNutrition.protein / dailyNutrition.goal.protein) * 100)}%</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-2xl font-bold text-gray-900">{dailyNutrition.protein}g</span>
+                <span className="text-sm text-gray-500">/ {dailyNutrition.goal.protein}g</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((dailyNutrition.protein / dailyNutrition.goal.protein) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Wheat className="w-6 h-6 text-yellow-500 mr-2" />
+                <span className="font-semibold text-gray-700">Carbs</span>
+              </div>
+              <span className="text-sm text-gray-500">{Math.round((dailyNutrition.carbs / dailyNutrition.goal.carbs) * 100)}%</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-2xl font-bold text-gray-900">{dailyNutrition.carbs}g</span>
+                <span className="text-sm text-gray-500">/ {dailyNutrition.goal.carbs}g</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((dailyNutrition.carbs / dailyNutrition.goal.carbs) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <Droplets className="w-6 h-6 text-green-500 mr-2" />
+                <span className="font-semibold text-gray-700">Fat</span>
+              </div>
+              <span className="text-sm text-gray-500">{Math.round((dailyNutrition.fat / dailyNutrition.goal.fat) * 100)}%</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-2xl font-bold text-gray-900">{dailyNutrition.fat}g</span>
+                <span className="text-sm text-gray-500">/ {dailyNutrition.goal.fat}g</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min((dailyNutrition.fat / dailyNutrition.goal.fat) * 100, 100)}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Meals</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <Sunrise className="w-5 h-5 text-yellow-500 mr-3" />
+                <span className="font-medium">Breakfast</span>
+              </div>
+              <span className="text-sm text-gray-500">280 cal</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <Sun className="w-5 h-5 text-orange-500 mr-3" />
+                <span className="font-medium">Lunch</span>
+              </div>
+              <span className="text-sm text-gray-500">420 cal</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-center">
+                <Moon className="w-5 h-5 text-blue-500 mr-3" />
+                <span className="font-medium">Dinner</span>
+              </div>
+              <span className="text-sm text-gray-500">480 cal</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Weekly Progress</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Avg. Daily Calories</span>
+              <span className="font-semibold">1,850</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Meals Cooked</span>
+              <span className="font-semibold">12</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Recipes Tried</span>
+              <span className="font-semibold">8</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Health Score</span>
+              <div className="flex items-center">
+                <span className="font-semibold text-green-600 mr-2">85%</span>
+                <TrendingUp className="w-4 h-4 text-green-500" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   // Component for Navigation
   const Navigation = () => (
@@ -361,6 +603,18 @@ const SmartRecipeApp = () => {
               >
                 <Heart className="mr-3 h-5 w-5" />
                 Favorites
+              </button>
+              <button 
+                onClick={() => setCurrentView('nutrition')} 
+                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full ${
+                  currentView === 'nutrition' ? 'text-orange-500 bg-orange-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
+              >
+                <BarChart3 className="mr-3 h-5 w-5" />
+                Nutrition
+                {userProfile.subscriptionType === 'free' && (
+                  <Crown className="ml-auto w-4 h-4 text-orange-500" />
+                )}
               </button>
               <button 
                 onClick={() => setCurrentView('profile')} 
@@ -1076,7 +1330,7 @@ const SmartRecipeApp = () => {
 
   // Component for Favorites View
   const FavoritesView = () => {
-    const favoriteRecipes = recipes.filter((recipe: Recipe) => isRecipeFavorited(recipe.id));
+    const favoriteRecipes = (recipes as Recipe[]).filter((recipe: Recipe) => isRecipeFavorited(recipe.id));
 
     return (
       <div>

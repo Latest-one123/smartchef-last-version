@@ -1,6 +1,4 @@
-import { users, userProfiles, recipes, userIngredients, userFavorites, mealPlans, cookingSessions, userAchievements, type User, type InsertUser, type UserProfile, type InsertUserProfile, type Recipe, type InsertRecipe, type UserIngredient, type InsertUserIngredient, type UserFavorite, type InsertUserFavorite, type MealPlan, type InsertMealPlan, type CookingSession, type InsertCookingSession, type UserAchievement, type InsertUserAchievement } from "@shared/schema";
-import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { type User, type InsertUser, type UserProfile, type InsertUserProfile, type Recipe, type InsertRecipe, type UserIngredient, type InsertUserIngredient, type UserFavorite, type InsertUserFavorite, type MealPlan, type InsertMealPlan, type CookingSession, type InsertCookingSession, type UserAchievement, type InsertUserAchievement } from "@shared/schema";
 
 export interface IStorage {
   // User management
@@ -143,7 +141,7 @@ export class DatabaseStorage implements IStorage {
         eq(userIngredients.userId, userId),
         eq(userIngredients.ingredient, ingredient)
       ));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getUserFavorites(userId: number): Promise<UserFavorite[]> {
@@ -165,7 +163,7 @@ export class DatabaseStorage implements IStorage {
         eq(userFavorites.userId, userId),
         eq(userFavorites.recipeId, recipeId)
       ));
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async getUserMealPlan(userId: number, weekStart: string): Promise<MealPlan | undefined> {

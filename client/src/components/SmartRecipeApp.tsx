@@ -730,8 +730,8 @@ const SmartRecipeApp = () => {
       <header className="bg-white border-b border-gray-200 px-4 py-6 md:px-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Good evening, Chef!</h1>
-            <p className="text-gray-600 mt-1">What would you like to cook today?</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Welcome back, Chef!</h1>
+            <p className="text-gray-600 mt-1">Discover amazing recipes tailored to your ingredients and preferences</p>
           </div>
           <div className="flex items-center space-x-3">
             <div className="hidden md:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
